@@ -69,19 +69,18 @@ def imr_duration(**params):
     return time_length * 1.1
 
 
-def interpolated_tf(m1, m2, mode=None):
-    """Interpolate the time frequency-track.
+# Value to be used if no f_lower information is provided, and a limit for
+# things like interpolation
+_MINIMUM_FLOWER = 1E-6
+_LOG_MINIMUM_FLOWER = -6
 
-    Defaults to the dominant (2,2) mode and uses :code:`chirptime` to compute
-    the track.
-    """
-    # Using findchirp_chirptime in PyCBC to calculate
+
+def interpolated_tf(m1, m2, mode=None):
+    # Using findchirp_chirptime in PyCBC to calculate 
     # the time-frequency track of dominant mode to get
     # the corresponding `f_min` for `t_obs_start`.
-    freq_array = np.logspace(-4, 0, num=10)
-    t_array = np.zeros(len(freq_array))
-    for i in range(len(freq_array)):
-        t_array[i] = chirptime(m1=m1, m2=m2, f_lower=freq_array[i], mode=mode)
+    freq_array = np.logspace(_LOG_MINIMUM_FLOWER, 0, num=200)
+    t_array = chirptime(m1=m1, m2=m2, f_lower=freq_array, mode=mode)
     tf_track = interp1d(t_array, freq_array)
     return tf_track
 
@@ -169,18 +168,18 @@ the Earth by ~20 degrees." % TIME_OFFSET_20_DEGREES)
     if ('f_lower' not in params) or (params['f_lower'] < 0):
         # the default value of 'f_lower' in PyCBC is -1.
         tf_track = interpolated_tf(m1, m2, mode=max_m_mode)
-        t_max = chirptime(m1=m1, m2=m2, f_lower=1e-4, mode=max_m_mode)
+        t_max = chirptime(m1=m1, m2=m2, f_lower=_MINIMUM_FLOWER, mode=max_m_mode)
         if t_obs_start > t_max:
             # Avoid "above the interpolation range" issue.
-            f_min = 1e-4
+            f_min = _MINIMUM_FLOWER
         else:
             f_min = tf_track(t_obs_start) # in Hz
     else:
         f_min = np.float64(params['f_lower']) # in Hz
         tf_track = interpolated_tf(m1, m2, mode=max_m_mode)
-        t_max = chirptime(m1=m1, m2=m2, f_lower=1e-4, mode=max_m_mode)
+        t_max = chirptime(m1=m1, m2=m2, f_lower=_MINIMUM_FLOWER, mode=max_m_mode)
         if t_obs_start > t_max:
-            f_min_tobs = 1e-4
+            f_min_tobs = _MINIMUM_FLOWER
         else:
             f_min_tobs = tf_track(t_obs_start) # in Hz
         if f_min < f_min_tobs:
