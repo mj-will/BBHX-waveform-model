@@ -73,6 +73,8 @@ def imr_duration(**params):
 # things like interpolation
 _MINIMUM_FLOWER = 1E-6
 _LOG_MINIMUM_FLOWER = -6
+
+
 def interpolated_tf(m1, m2, m_mode=None):
     """Interpolate the time frequency-track.
 
